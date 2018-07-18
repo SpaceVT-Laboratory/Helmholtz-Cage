@@ -207,7 +207,8 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
             self.setFlag(13,False)
         
         elif flag == 13 : self.pause_flag_checkbox.setChecked(state)
-        elif (flag == 'clear') and (state == False): for index in range(1,13): self.setFlag(index,False)
+        elif (flag == 'clear') and (state == False): 
+            for index in range(1,13): self.setFlag(index,False)
 
     # Writes to the Arduino a command type and the command itself before delaying for a specific amount of time and returning what the Arduino replys
     def ArduinoComm(self,command,state):
@@ -235,17 +236,18 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 string = string.replace('_', ' ')
                 string = string.replace('  ', ' ')
                 array = string.split()
-                if len(array) != 5: raise Exception('Incorrect Header or Data Order')
-                coordiSystem[i] = array[2]
-                unit[i] = array[4]
-                axis[i] = array[3]
+                #if len(array) != 5: raise Exception('Incorrect Header or Data Order')
+                if len(array) != 2: raise Exception('Incorrect Header or Data Order')
+                #coordiSystem[i] = array[2]
+                unit[i] = array[1]
+                axis[i] = array[0]
                 string = string.replace(' ', '')
-                if string != ('BField'+coordiSystem[i]+axis_r[i]+unit[i]): raise Exception('Incorrect Header or Data Order')
+                #if string != ('BField'+coordiSystem[i]+axis_r[i]+unit[i]): raise Exception('Incorrect Header or Data Order')
             if (unit[0] != unit[1] or unit[0] != unit[2] or not(unit[0] != 'nT' or unit[0] != 'T' or unit[0] != 'G')): raise Exception('Incorrect Units')
-            if (coordiSystem[0] != coordiSystem[1] or coordiSystem[0] != coordiSystem[2] or not(coordiSystem[0] != 'ECF' or coordiSystem[0] != 'ECI')): raise Exception('Incorrect Coordinate System')
+            #if (coordiSystem[0] != coordiSystem[1] or coordiSystem[0] != coordiSystem[2] or not(coordiSystem[0] != 'ECF' or coordiSystem[0] != 'ECI')): raise Exception('Incorrect Coordinate System')
             self.setStatus('File is supported')
             self.unit_box.setText(unit[0])
-            self.coordinate_system_box.setText(coordiSystem[0])
+            #self.coordinate_system_box.setText(coordiSystem[0])
             self.path_box.setText(os.path.basename(self.path))
             self.setFlag(1,True)
 
@@ -277,9 +279,10 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 next(fileData) # Throws away header data since we already know it
                 self.bfield_data[:] = []
                 for currentline in fileData:
-                    if '' in currentline: raise Exception('Unbalanced Data')
-                    self.bfield_data.append([float(currentline[0]), float(currentline[1]), float(currentline[2]),
-                    self.isNegative(float(currentline[0])), self.isNegative(float(currentline[1])), self.isNegative(float(currentline[2]))])
+                    if currentline != []:
+                        if '' in currentline: raise Exception('Unbalanced Data')
+                        self.bfield_data.append([float(currentline[0]), float(currentline[1]), float(currentline[2]),
+                        self.isNegative(float(currentline[0])), self.isNegative(float(currentline[1])), self.isNegative(float(currentline[2]))])
             self.num_of_data_points_box.setText(str(len(self.bfield_data)))
             self.setStatus("Data extracted!")
             self.setFlag(2,True)
