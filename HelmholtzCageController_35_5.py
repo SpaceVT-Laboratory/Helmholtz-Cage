@@ -298,7 +298,52 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
 #=============================================================================#
 #                       Data transfer directly from STK                       #
 #=============================================================================#
-# This version of the code doesn't support direct STK data transfer
+    # Written by Gavin Brown - gavinb11@vt.edu
+    def STK_Mag_Generation(nameSat="Satellite1", dataStepSize=60):
+        # Imports
+        import comtypes
+        from comtypes.client import GetActiveObject
+        from comtypes.gen import STKObjects
+        import csv
+
+        # Getting Open STK Application
+        app = GetActiveObject("STK11.Application")
+        app.Visible=True
+        app.UserControl= True
+        root=app.Personality2
+
+        # Getting Current STK Scenario
+        sc=root.CurrentScenario
+        sc2=sc.QueryInterface(STKObjects.IAgScenario)
+        root.Rewind();
+
+        # Getting Satellite from STK
+        sat = sc.Children.Item(nameSat)
+
+        # Magnetic Field Data for the Satellite
+        rptElements =['Time','x','y','z']
+        magfieldWMMTimeVar=sat.DataProviders.GetDataPrvTimeVarFromPath("Vectors(VNC)//MagField(WMM)")
+        magResults=magfieldWMMTimeVar.ExecElements(sc2.StartTime,sc2.StopTime,dataStepSize,rptElements)
+        magtime=magResults.DataSets.Item(0).GetValues()
+        magx=magResults.DataSets.Item(1).GetValues()
+        magy=magResults.DataSets.Item(2).GetValues()
+        magz=magResults.DataSets.Item(3).GetValues()
+
+        # Exporting Magnetic Field Data to a CSV File
+        csvFileName = sc.InstanceName + '_MagFieldData.csv'
+        rowColumnTitle = ['Mag x (nT)', 'Mag y (nT)', 'Mag z (nT)']
+        with open(csvFileName, "w", newline='') as csvfile:
+            filewriter = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+            filewriter.writerow(rowColumnTitle)
+            for i, value in enumerate(magx):
+                magxcurr = magx[i]
+                magycurr = magy[i]
+                magzcurr = magz[i]
+                rowcurr = [str(magxcurr), str(magycurr), str(magzcurr)]
+                filewriter.writerow(rowcurr)
+
+        return csvFileName
+
 #=============================================================================#
 #                           PSU Connection Controls                           #
 #=============================================================================#
