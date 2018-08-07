@@ -12,7 +12,7 @@
 #   Created:                7/16/2015
 #
 #   Further Developments:   Gaeron Friedrichs
-#   Last modified:          5/19/2018
+#   Last modified:          8/1/2018
 #   Version:                6.0.1
 #   Notes:                  This a beta version adapted for Python 3.6 and PyQT5
 
@@ -38,7 +38,9 @@ import visa
 from PyQt5 import QtGui, uic, QtWidgets, QtCore
 QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
 qtCreatorFile = "HelmholtzCageController.ui"
+qtSTKWizard = "STKWizard.ui"
 Ui_MainWindow, QtBaseClass = uic.loadUiType(qtCreatorFile)
+Wiz_form, Wiz_base = uic.loadUiType(qtSTKWizard)
 
 class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
@@ -52,6 +54,8 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
         QtWidgets.QMainWindow.__init__(self)
         Ui_MainWindow.__init__(self)
         self.setupUi(self)
+        self.setFixedSize(self.size())
+        self.wizard_window = Wizard()
         self.path = None
         self.bfield_data = []
         self.sim_data = []
@@ -81,6 +85,7 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
         self.connect_button.clicked.connect(self.Connect)
         self.disconnect_button.clicked.connect(self.Disconnect)
         self.run_button.clicked.connect(self.activateSim)
+        self.STKWizard_button.clicked.connect(self.launchWizard)
 
         #test this out
         self.roc_unit_combobox.activated.connect(self.setRoC)
@@ -298,6 +303,15 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
 #=============================================================================#
 #                       Data transfer directly from STK                       #
 #=============================================================================#
+   #clicking stk generagtion should:
+        #give a prompt that tells you to open the stk scenario
+        #prompts for the name of the satellite
+        #prompts for the timestep from the simulation
+        #Generates file and autofills if selected
+    def launchWizard(self):
+        self.wizard_window.show()
+    
+
     # Written by Gavin Brown - gavinb11@vt.edu
     def STK_Mag_Generation(nameSat="Satellite1", dataStepSize=60):
         # Imports
@@ -324,14 +338,16 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
         rptElements =['Time','x','y','z']
         magfieldWMMTimeVar=sat.DataProviders.GetDataPrvTimeVarFromPath("Vectors(VNC)//MagField(WMM)")
         magResults=magfieldWMMTimeVar.ExecElements(sc2.StartTime,sc2.StopTime,dataStepSize,rptElements)
-        magtime=magResults.DataSets.Item(0).GetValues()
+        #magtime=magResults.DataSets.Item(0).GetValues()
         magx=magResults.DataSets.Item(1).GetValues()
         magy=magResults.DataSets.Item(2).GetValues()
         magz=magResults.DataSets.Item(3).GetValues()
 
         # Exporting Magnetic Field Data to a CSV File
         csvFileName = sc.InstanceName + '_MagFieldData.csv'
-        rowColumnTitle = ['Mag x (nT)', 'Mag y (nT)', 'Mag z (nT)']
+        #rowColumnTitle = ['Mag x (nT)', 'Mag y (nT)', 'Mag z (nT)']
+        rowColumnTitle = ['x (nT)', 'y (nT)', 'z (nT)']
+
         with open(csvFileName, "w", newline='') as csvfile:
             filewriter = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
             filewriter.writerow(rowColumnTitle)
@@ -540,6 +556,12 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
         #def closeEvent(self, *args, **kwargs):
         #    super(QtGui.QMainWindow, self).closeEvent(*args, **kwargs)
         #    print "you just closed the pyqt window!!! you are awesome!!!"
+
+class Wizard(Wiz_base, Wiz_form):
+    def __init__(self):
+        super(Wiz_base,self).__init__()
+        self.setupUi(self)
+
 
 #=============================================================================#
 #                                  Main Method                                #
