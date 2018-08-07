@@ -37,8 +37,10 @@ import time
 import visa
 from PyQt5 import QtGui, uic, QtWidgets, QtCore
 QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
+
 qtCreatorFile = "HelmholtzCageController.ui"
 qtSTKWizard = "STKWizard.ui"
+
 Ui_MainWindow, QtBaseClass = uic.loadUiType(qtCreatorFile)
 Wiz_form, Wiz_base = uic.loadUiType(qtSTKWizard)
 
@@ -309,7 +311,13 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
         #prompts for the timestep from the simulation
         #Generates file and autofills if selected
     def launchWizard(self):
-        self.wizard_window.show()
+        self.wizard_window.exec_()
+        name = self.wizard_window.getName()
+        size = self.wizard_window.getSize()
+        fill = self.wizard_window.getFill()
+        #print(name)
+        #print(size)
+        #print(fill)
     
 
     # Written by Gavin Brown - gavinb11@vt.edu
@@ -537,7 +545,7 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
     def clearSim(self):
-            #self.ArduinoComm('0','0') #Pins 8:13
+         #self.ArduinoComm('0','0') #Pins 8:13
         self.ArduinoComm(4,4) #Pins 8:13
         self.keithleyX.write('APPL 0.00,0.00')
         self.keithleyY.write('APPL 0.00,0.00')
@@ -553,14 +561,28 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
         self.zcurrent_box.setText('0')
 
 
-        #def closeEvent(self, *args, **kwargs):
-        #    super(QtGui.QMainWindow, self).closeEvent(*args, **kwargs)
-        #    print "you just closed the pyqt window!!! you are awesome!!!"
 
 class Wizard(Wiz_base, Wiz_form):
     def __init__(self):
         super(Wiz_base,self).__init__()
         self.setupUi(self)
+        self.satelliteName = None
+        self.stepSize = None
+        self.autofill = True
+        self.open = True
+        self.submit_button.clicked.connect(self.setInfo)
+
+    def setInfo(self):
+        self.satelliteName = self.satNameInput.toPlainText()
+        #TO DO: Install try catch
+        self.stepSize = int(self.stepSizeInput.toPlainText())
+        self.autofill = self.autofillInput.isChecked()
+        self.close()
+    
+    def getName(self): return self.satelliteName
+    def getSize(self): return self.stepSize
+    def getFill(self): return self.autofill
+
 
 
 #=============================================================================#
