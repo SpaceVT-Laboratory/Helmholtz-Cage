@@ -220,6 +220,7 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
     # Writes to the Arduino a command type and the command itself before delaying for a specific amount of time and returning what the Arduino replys
     def ArduinoComm(self,command,state):
         if not self.debug_flag_checkbox.isChecked(): self.Arduino.write(chr(command+state+100).encode('UTF-8'))
+
 #=============================================================================#
 #                                Data Extraction                              #
 #=============================================================================#
@@ -253,7 +254,6 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
             if (unit[0] != unit[1] or unit[0] != unit[2] or not(unit[0] != 'nT' or unit[0] != 'T' or unit[0] != 'G')): raise Exception('Incorrect Units')
             #if (coordiSystem[0] != coordiSystem[1] or coordiSystem[0] != coordiSystem[2] or not(coordiSystem[0] != 'ECF' or coordiSystem[0] != 'ECI')): raise Exception('Incorrect Coordinate System')
             self.setStatus('File is supported')
-            self.unit_box.setText(unit[0])
             #self.coordinate_system_box.setText(coordiSystem[0])
             self.path_box.setText(os.path.basename(self.path))
             self.setFlag(1,True)
@@ -293,6 +293,7 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
             self.num_of_data_points_box.setText(str(len(self.bfield_data)))
             self.setStatus("Data extracted!")
             self.setFlag(2,True)
+            print(self.bfield_data)
         except Exception as etype:
             error = ''
             if etype.args[0] == 'Unbalanced Data': error = 'Error: ' + etype.args[0] + ' - The amount of data for each axis is unbalanced'
@@ -302,37 +303,40 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
             self.path_box.setText("")
             self.setFlag(1,False)
         except: self.setStatus("Error: Unknown - Retry extraction or reselect a file")
+
 #=============================================================================#
 #                       Data transfer directly from STK                       #
 #=============================================================================#
-   #clicking stk generagtion should:
-        #give a prompt that tells you to open the stk scenario
-        #prompts for the name of the satellite
-        #prompts for the timestep from the simulation
-        #Generates file and autofills if selected
+
+    # Wrapper for Gavin's function. Interacts with the STK Wizard
     def launchWizard(self):
         self.wizard_window.exec_()
         name = self.wizard_window.getName()
         size = self.wizard_window.getSize()
         fill = self.wizard_window.getFill()
-        #print(name)
-        #print(size)
-        #print(fill)
-    
+        filename = self.STKMagGeneration(name, size)
+        if(fill):
+            self.path = filename
+            self.path_box.setText(os.path.basename(self.path))
+            self.setFlag(1, True)
+            self.Extract()
 
     # Written by Gavin Brown - gavinb11@vt.edu
-    def STK_Mag_Generation(nameSat="Satellite1", dataStepSize=60):
+    def STKMagGeneration(self, nameSat, dataStepSize):
         # Imports
         import comtypes
         from comtypes.client import GetActiveObject
-        from comtypes.gen import STKObjects
-        import csv
 
         # Getting Open STK Application
         app = GetActiveObject("STK11.Application")
+        
+        
         app.Visible=True
         app.UserControl= True
         root=app.Personality2
+
+        from comtypes.gen import STKObjects
+
 
         # Getting Current STK Scenario
         sc=root.CurrentScenario
@@ -560,6 +564,10 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
         self.ycurrent_box.setText('0')
         self.zcurrent_box.setText('0')
 
+
+#=============================================================================#
+#                               UI Classes                                    #
+#=============================================================================#
 
 
 class Wizard(Wiz_base, Wiz_form):
