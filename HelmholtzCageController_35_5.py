@@ -11,8 +11,8 @@
 #   Originally Written by:  Keith Tiemann
 #   Created:                7/16/2015
 #
-#   Further Developments:   Gaeron Friedrichs
-#   Last modified:          8/1/2018
+#   Further Developments:   Gaeron Friedrichs - gaeron@vt.edu
+#   Last modified:          8/8/2018
 #   Version:                6.0.1
 #   Notes:                  This a beta version adapted for Python 3.6 and PyQT5
 
@@ -118,7 +118,7 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
         except: return False
 
     # Check if a string is empty
-    def isEmpty(self,string): return 0 if '' == string else 1
+    def isEmpty(self,string): return True if '' == string else False
         #if '' == string: return 1
         #else: return 0
 
@@ -266,13 +266,11 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
             elif etype.args[0] == 'Incorrect Coordinate System':  error = 'Error: ' + etype.args[0] + ' - The only supported coordinate systems are ECI and ECF'
             else: error = 'Error: ' + str(etype.args[0])
             self.setStatus(error)
-            self.unit_box.setText("N/A")
             self.coordinate_system_box.setText("N/A")
             self.path_box.setText("")
             self.setFlag(1,False)
         except:
             self.setStatus("Error: Unknown")
-            self.unit_box.setText("N/A")
             self.coordinate_system_box.setText("N/A")
             self.path_box.setText("")
             self.setFlag(1,False)
@@ -293,12 +291,10 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
             self.num_of_data_points_box.setText(str(len(self.bfield_data)))
             self.setStatus("Data extracted!")
             self.setFlag(2,True)
-            print(self.bfield_data)
         except Exception as etype:
             error = ''
             if etype.args[0] == 'Unbalanced Data': error = 'Error: ' + etype.args[0] + ' - The amount of data for each axis is unbalanced'
             self.setStatus(error)
-            self.unit_box.setText("N/A")
             self.coordinate_system_box.setText("N/A")
             self.path_box.setText("")
             self.setFlag(1,False)
@@ -466,14 +462,12 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
         for x in range(0,int(self.num_of_data_points_box.text())):
             # The number 613647 is from the constant values from the equations for the cage.
-            IvalueX = 613647*(self.bfield_data[x][0]*.000000001*self.ConvertUnit(self.unit_box.text())+.000000001*float(self.xoffset_line.text()))*1.4492/35; #X Middle Coil 1.4492 35 Coils
-            IvalueY = 613647*(self.bfield_data[x][1]*.000000001*self.ConvertUnit(self.unit_box.text())+.000000001*float(self.yoffset_line.text()))*1.3984/35; #Y Small Coil 1.3984 35 Coils
-            IvalueZ = 613647*(self.bfield_data[x][2]*.000000001*self.ConvertUnit(self.unit_box.text())+.000000001*float(self.zoffset_line.text()))*1.5/35;    #Z Large Coil 1.5 35 Coils
-            
+            IvalueX = 613647*(self.bfield_data[x][0]*.000000001 +.000000001*float(self.xoffset_line.text()))*1.4492/35; #X Middle Coil 1.4492 35 Coils
+            IvalueY = 613647*(self.bfield_data[x][1]*.000000001 +.000000001*float(self.yoffset_line.text()))*1.3984/35; #Y Small Coil 1.3984 35 Coils
+            IvalueZ = 613647*(self.bfield_data[x][2]*.000000001 +.000000001*float(self.zoffset_line.text()))*1.5/35;    #Z Large Coil 1.5 35 Coils
             self.V_data.append([self.voltage,self.voltage,self.voltage])
             self.I_data.append([round(IvalueX,2),round(IvalueY,2),round(IvalueZ,2)])
             self.sim_data.append([('APPL '+str(self.V_data[x][0])+','+str(self.I_data[x][0])),('APPL '+str(self.V_data[x][1])+','+str(self.I_data[x][1])),('APPL '+str(self.V_data[x][2])+','+str(self.I_data[x][2]))])
-
     # Activates the simulation. Also is used to resume the simulation
     def activateSim(self):
         try: # Sets up the simluation
@@ -528,9 +522,10 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
             except:
                 self.setStatus("Error: Unknown - 1")
                 self.setFlag(12, False)
-        except:
+        except Exception as e:
             self.setStatus("Error: Unknown - 2")
             self.setFlag(12, False)
+            print(e)
 
 
     def pauseSim(self, index):
